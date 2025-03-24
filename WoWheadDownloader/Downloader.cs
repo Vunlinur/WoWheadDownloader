@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace WoWheadDownloader {
     internal class Downloader {
-        public static Sound[] DownloadSoundPage(string targetFolder, string soundPage) {
+        public static async Task<Sound[]> DownloadSoundPage(string targetFolder, string soundPage) {
             Directory.CreateDirectory(targetFolder);
 
             var doc = GetPage(soundPage);
@@ -25,7 +25,7 @@ namespace WoWheadDownloader {
                     string filePath = Path.Combine(targetFolder, fileName);
 
                     Console.WriteLine($"Downloading: {fileName}");
-                    DownloadFileAsync(client, file.Url, filePath).Wait();
+                    await DownloadFileAsync(client, file.Url, filePath);
                     Console.WriteLine($"Saved: {filePath}");
                 }
             }
