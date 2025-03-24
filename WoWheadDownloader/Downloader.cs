@@ -18,6 +18,7 @@ namespace WoWheadDownloader {
                 Console.WriteLine("No sounds found to download.");
                 return [];
             }
+
             HttpClient client = new();
             foreach (var sound in sounds) {
                 foreach (var file in sound.Files) {
@@ -32,19 +33,12 @@ namespace WoWheadDownloader {
             return sounds;
         }
 
-        static HtmlDocument? GetPage(string url) {
+        internal static HtmlDocument GetPage(string url) {
             var web = new HtmlWeb();
-            try {
-                return web.Load(url);
-            }
-            catch (AggregateException aggregateException) {
-                if (!aggregateException.Message.Contains("(404) Not Found"))
-                    throw;
-            }
-            return null;
+            return web.Load(url);
         }
 
-        private static bool GetSoundJson(HtmlDocument? doc, out string output) {
+        internal static bool GetSoundJson(HtmlDocument? doc, out string output) {
             // Find script tag
             var scriptNode = doc.DocumentNode.SelectSingleNode("//script[contains(text(), 'WH.Gatherer.addData')]");
 
@@ -67,7 +61,7 @@ namespace WoWheadDownloader {
             return true;
         }
 
-        private static Sound[] ParseSoundJson(string jsonOutput) {
+        internal static Sound[] ParseSoundJson(string jsonOutput) {
             var soundsDict = JsonSerializer.Deserialize<Dictionary<string, Sound>>(jsonOutput);
             if (soundsDict is null)
                 throw new InvalidDataException("Failed to deserialize JSON.");
@@ -78,7 +72,7 @@ namespace WoWheadDownloader {
             return soundsDict.Values.ToArray();
         }
 
-        static async Task DownloadFileAsync(HttpClient client, string url, string filePath) {
+        internal static async Task DownloadFileAsync(HttpClient client, string url, string filePath) {
             try {
                 byte[] fileBytes = await client.GetByteArrayAsync(url);
                 await File.WriteAllBytesAsync(filePath, fileBytes);
