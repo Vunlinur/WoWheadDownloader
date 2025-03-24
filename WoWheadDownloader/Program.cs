@@ -50,7 +50,6 @@ namespace WoWheadDownloader {
         }
 
         private static bool GetSoundJson(HtmlDocument? doc, out string output) {
-
             // Find script tag
             var scriptNode = doc.DocumentNode.SelectSingleNode("//script[contains(text(), 'WH.Gatherer.addData')]");
 
@@ -61,7 +60,7 @@ namespace WoWheadDownloader {
 
             // Extract JSON using Regex
             string scriptText = scriptNode.InnerText;
-            var match = Regex.Match(scriptText, @"WH\.Gatherer\.addData\(\d+,\s*\d+,\s*(\{.*\})\);");
+            var match = Regex.Match(scriptText, @"WH\.Gatherer\.addData\(19,\s*\d+,\s*(\{.*\})\);");
 
             if (!match.Success) {
                 output = "No JSON data found.";
