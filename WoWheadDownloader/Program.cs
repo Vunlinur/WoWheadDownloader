@@ -8,9 +8,7 @@ namespace WoWheadDownloader {
         static async Task Main(string[] args) {
             string targetFolder = "DownloadedMP3s";
             string soundPage = "https://www.wowhead.com/sound=22271/mus-southbarrens-gn";
-
             Directory.CreateDirectory(targetFolder);
-
 
             // Step 1: Get the Page
             HtmlDocument doc = null;
@@ -51,27 +49,45 @@ namespace WoWheadDownloader {
                 spinner.Succeed($"Found {sounds.SelectMany(s => s.Files).Count()} sounds.");
                 return true;
             });
+
             if (!parseSuccess) return;
 
             // Step 4: Download Files
             using HttpClient client = new();
             foreach (var sound in sounds) {
-                foreach (var file in sound.Files) {
-                    string fileName = Path.GetFileName(new Uri(file.Url).LocalPath);
-                    string filePath = Path.Combine(targetFolder, fileName);
+                int fileCount = sound.Files.Count;
 
-                    await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner =>
-                    {
-                        try {
-                            await Downloader.DownloadFileAsync(client, file.Url, filePath);
-                            spinner.Succeed($"  Saved: {filePath}");
-                        }
-                        catch (Exception ex) {
-                            spinner.Fail($"  Failed: {fileName} ({ex.Message})");
-                        }
-                    });
-                }
+                await Spinner.StartAsync($"  Downloading: {sound.Name} ({fileCount} file/s)", async spinner => {
+                    int errorCount = await DownloadSoundFiles(sound, client, targetFolder);
+
+                    if (errorCount == 0)
+                        spinner.Succeed($"Completed: {sound.Name} ({fileCount} file/s)");
+                    else if (errorCount == fileCount)
+                        spinner.Fail($"Failed: {sound.Name} (0/{fileCount} file/s)");
+                    else
+                        spinner.Warn($"Partially completed: {sound.Name} ({fileCount - errorCount}/{fileCount} file/s)");
+                });
             }
+        }
+
+        private static async Task<int> DownloadSoundFiles(Sound sound, HttpClient client, string targetFolder) {
+            int errorCount = 0;
+            foreach (var file in sound.Files) {
+                string fileName = Path.GetFileName(new Uri(file.Url).LocalPath);
+                string filePath = Path.Combine(targetFolder, fileName);
+
+                await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner => {
+                    try {
+                        await Downloader.DownloadFileAsync(client, file.Url, filePath);
+                        spinner.Succeed($"  Saved: {filePath}");
+                    }
+                    catch (Exception ex) {
+                        errorCount++;
+                        spinner.Fail($"  Failed: {fileName} ({ex.Message})");
+                    }
+                });
+            }
+            return errorCount;
         }
     }
 }
