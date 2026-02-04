@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WoWheadDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "\"https://www.wowhead.com/sounds/zone-music/name:kultir\""
+    }
+  }
+}

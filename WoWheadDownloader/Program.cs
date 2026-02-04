@@ -5,8 +5,15 @@ using System.Linq;
 namespace WoWheadDownloader {
     internal class Program {
         static async Task Main(string[] args) {
-            string targetFolder = "DownloadedMP3s";
-            string soundPage = "https://www.wowhead.com/sounds/zone-music/name:kultir";
+            // Parse CLI arguments
+            if (args.Length == 0) {
+				Console.WriteLine("Usage: WoWheadDownloader [soundPageUrl] [targetFolder (optional)]");
+				return;
+			}
+            
+            string soundPage = args[0];
+            string targetFolder = args.Length == 2 && !string.IsNullOrWhiteSpace(args[1]) ? args[1] : "DownloadedMP3s";
+            
             Directory.CreateDirectory(targetFolder);
 
 			// Step 1: Get the sounds from the page
