@@ -34,7 +34,7 @@ namespace WoWheadDownloader {
             foreach (var sound in sounds) {
                 int fileCount = sound.Files.Count;
 
-                await Spinner.StartAsync($"  Downloading: {sound.Name} ({fileCount} file/s)", async spinner => {
+                await Spinner.StartAsync($"Downloading: {sound.Name} ({fileCount} file/s)", async spinner => {
                     int errorCount = await DownloadSoundFiles(sound, client, targetFolder);
 
                     if (errorCount == 0)
@@ -55,18 +55,18 @@ namespace WoWheadDownloader {
 				Directory.CreateDirectory(setDir);
                 file.LocalFile = Path.Combine(setDir, fileName);
 
-                await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner => {
+                await Spinner.StartAsync($"\tDownloading: {fileName}...", async spinner => {
                     if (File.Exists(file.LocalFile)) {
-                        spinner.Warn($"  Skipped (already exists): {file.LocalFile}");
+                        spinner.Warn($"\tSkipped (already exists): {file.LocalFile}");
                         return;
                     }
                     try {
                         await Downloader.DownloadFileAsync(client, file.Url, file.LocalFile);
-                        spinner.Succeed($"  Saved: {file.LocalFile}");
+                        spinner.Succeed($"\tSaved: {file.LocalFile}");
                     }
                     catch (Exception ex) {
                         errorCount++;
-                        spinner.Fail($"  Failed: {fileName} ({ex.Message})");
+                        spinner.Fail($"\tFailed: {fileName} ({ex.Message})");
                     }
                 });
             }
