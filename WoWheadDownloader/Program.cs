@@ -82,7 +82,6 @@ namespace WoWheadDownloader {
                     }
                     try {
                         await Downloader.DownloadFileAsync(client, file.Url, file.MetaData.LocalFile);
-                        file.MetaData.Downloaded = true;
                         spinner.Succeed($"  Saved: {file.MetaData.LocalFile}");
                     }
                     catch (Exception ex) {
