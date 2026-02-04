@@ -30,7 +30,8 @@ namespace WoWheadDownloader {
             // Step 2: Extract JSON
             string jsonOutput = "";
             bool jsonSuccess = await Spinner.StartAsync("Extracting sound information...", async spinner => {
-                if (!Downloader.GetSoundJson(doc, out jsonOutput)) {
+                //if (!Downloader.GetSoundJson(doc, out jsonOutput)) {
+                if (!Downloader.GetSearchedSoundsJson(doc, out jsonOutput)) {
                     spinner.Fail("Failed to extract sound information.");
                     return false;
                 }
@@ -43,7 +44,8 @@ namespace WoWheadDownloader {
             // Step 3: Parse Sounds
             Sound[] sounds = [];
             bool parseSuccess = await Spinner.StartAsync("Parsing sound data...", async spinner => {
-                sounds = Downloader.ParseSoundJson(jsonOutput);
+				//sounds = Downloader.ParseSoundJson(jsonOutput);
+				sounds = Downloader.ParseSearchedSoundsJson(jsonOutput).Sounds;
                 if (sounds.Length == 0) {
                     spinner.Fail("No sounds found.");
                     return false;
@@ -95,7 +97,7 @@ namespace WoWheadDownloader {
 				string fileName = file.FileName;
 				string setDir = Path.Combine(targetFolder, sound.Name);
 				Directory.CreateDirectory(setDir);
-                file.MetaData.LocalFile = Path.Combine(targetFolder, setDir, fileName);
+                file.MetaData.LocalFile = Path.Combine(setDir, fileName);
 
                 await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner => {
                     try {

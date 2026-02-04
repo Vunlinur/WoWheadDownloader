@@ -1,6 +1,28 @@
 ﻿using System.Text.Json.Serialization;
 
 namespace WoWheadDownloader {
+    /**
+     * Represents a script json from the Search page
+     */
+	internal class Search {
+		[JsonPropertyName("sort")]
+		public string[] Sort { get; set; }
+
+		[JsonPropertyName("maxPopularity")]
+		public int MaxPopularity { get; set; }
+
+		[JsonPropertyName("id")]
+		public string Id { get; set; }
+
+		[JsonPropertyName("template")]
+		public string Template { get; set; }
+
+		[JsonPropertyName("data")]
+		public Sound[] Sounds { get; set; }
+
+        // ExtraCols gets removed because it's unquoted and bug-prone
+	}
+
 	/**
      * Represetns a set of sound files, e.g.:
      * https://www.wowhead.com/sound=22846/mus-southbarrensgreen
@@ -16,9 +38,12 @@ namespace WoWheadDownloader {
         [JsonPropertyName("type")]
         public int Type { get; set; }
 
-        [JsonPropertyName("files")]
-        public List<SoundFile> Files { get; set; }
-    }
+		[JsonPropertyName("files")]
+		public List<SoundFile> Files { get; set; }
+
+		[JsonPropertyName("popularity")]
+		public int Popularity { get; set; }
+	}
 
     /**
      * A single sound file within a sound set

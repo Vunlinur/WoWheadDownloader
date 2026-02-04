@@ -38,6 +38,28 @@ namespace WoWheadDownloader {
             return web.Load(url);
         }
 
+		internal static bool GetSearchedSoundsJson(HtmlDocument? doc, out string output) {
+			// Find script tag
+			var scriptNode = doc.DocumentNode.SelectSingleNode("//script[contains(text(), 'new Listview')]");
+
+			if (scriptNode == null) {
+				output = "No relevant script tag found.";
+				return false;
+			}
+			// Extract JSON using Regex
+			string scriptText = scriptNode.InnerText;
+			var match = Regex.Match(scriptText, @"new Listview\((\{.*\})\);");
+
+			if (!match.Success) {
+				output = "No JSON data found.";
+				return false;
+			}
+
+			output = match.Groups[1].Value;
+			output = output.Replace("\\/", "/"); // Fix escaped slashes
+			return true;
+		}
+
         internal static bool GetSoundJson(HtmlDocument? doc, out string output) {
             // Find script tag
             var scriptNode = doc.DocumentNode.SelectSingleNode("//script[contains(text(), 'WH.Gatherer.addData')]");
@@ -60,6 +82,19 @@ namespace WoWheadDownloader {
             output = output.Replace("\\/", "/"); // Fix escaped slashes
             return true;
         }
+
+		internal static Search ParseSearchedSoundsJson(string jsonOutput) {
+			jsonOutput = Regex.Replace(jsonOutput,
+				@",?\s*""extraCols""\s*:\s*\[[^\]]*\]\s*,?",
+		        string.Empty, RegexOptions.Singleline
+            );
+
+			var search = JsonSerializer.Deserialize<Search>(jsonOutput);
+			if (search is null)
+				throw new InvalidDataException("Failed to deserialize JSON.");
+
+			return search;
+		}
 
         internal static Sound[] ParseSoundJson(string jsonOutput) {
             var soundsDict = JsonSerializer.Deserialize<Dictionary<string, Sound>>(jsonOutput);
