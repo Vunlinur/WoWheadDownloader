@@ -76,6 +76,10 @@ namespace WoWheadDownloader {
                 file.MetaData.LocalFile = Path.Combine(setDir, fileName);
 
                 await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner => {
+                    if (File.Exists(file.MetaData.LocalFile)) {
+                        spinner.Warn($"  Skipped (already exists): {file.MetaData.LocalFile}");
+                        return;
+                    }
                     try {
                         await Downloader.DownloadFileAsync(client, file.Url, file.MetaData.LocalFile);
                         file.MetaData.Downloaded = true;

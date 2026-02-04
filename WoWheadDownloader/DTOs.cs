@@ -69,6 +69,5 @@ namespace WoWheadDownloader {
 
     internal class FileData {
         public string LocalFile { get; set; }
-        public bool Downloaded { get; set; }
     }
 }
