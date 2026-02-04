@@ -1,5 +1,4 @@
-﻿using HtmlAgilityPack;
-using Kurukuru;
+﻿using Kurukuru;
 using NAudio.Wave;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -73,16 +72,16 @@ namespace WoWheadDownloader {
 				string fileName = file.FileName;
 				string setDir = Path.Combine(targetFolder, sound.Name);
 				Directory.CreateDirectory(setDir);
-                file.MetaData.LocalFile = Path.Combine(setDir, fileName);
+                file.LocalFile = Path.Combine(setDir, fileName);
 
                 await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner => {
-                    if (File.Exists(file.MetaData.LocalFile)) {
-                        spinner.Warn($"  Skipped (already exists): {file.MetaData.LocalFile}");
+                    if (File.Exists(file.LocalFile)) {
+                        spinner.Warn($"  Skipped (already exists): {file.LocalFile}");
                         return;
                     }
                     try {
-                        await Downloader.DownloadFileAsync(client, file.Url, file.MetaData.LocalFile);
-                        spinner.Succeed($"  Saved: {file.MetaData.LocalFile}");
+                        await Downloader.DownloadFileAsync(client, file.Url, file.LocalFile);
+                        spinner.Succeed($"  Saved: {file.LocalFile}");
                     }
                     catch (Exception ex) {
                         errorCount++;

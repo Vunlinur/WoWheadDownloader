@@ -64,10 +64,6 @@ namespace WoWheadDownloader {
 
         public string FileName => Path.GetFileName(new Uri(Url).LocalPath);
 
-        public FileData MetaData { get; set; } = new();
-    }
-
-    internal class FileData {
-        public string LocalFile { get; set; }
-    }
+		public string? LocalFile { get; set; }
+	}
 }
