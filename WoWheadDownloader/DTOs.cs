@@ -20,7 +20,8 @@ namespace WoWheadDownloader {
 		[JsonPropertyName("data")]
 		public Sound[] Sounds { get; set; }
 
-        // ExtraCols gets removed because it's unquoted and bug-prone
+        // ExtraCols gets removed from the json string
+        // before parsing because it's unquoted and bug-prone
 	}
 
 	/**

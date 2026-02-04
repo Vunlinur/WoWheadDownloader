@@ -3,23 +3,13 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace WoWheadDownloader {
-    internal class Downloader {
+    internal partial class Downloader {
         public static async Task<Sound[]> DownloadSoundPage(string targetFolder, string soundPage) {
             Directory.CreateDirectory(targetFolder);
 
-            var doc = GetPage(soundPage);
-            if (!GetSoundJson(doc, out string jsonOutput)) {
-                Console.WriteLine($"Failed to get sound JSON: {jsonOutput}");
-                return [];
-            }
+			Sound[] sounds = GetSoundsFromPage(soundPage);
 
-            Sound[] sounds = ParseSoundJson(jsonOutput);
-            if (sounds.Length == 0) {
-                Console.WriteLine("No sounds found to download.");
-                return [];
-            }
-
-            HttpClient client = new();
+			HttpClient client = new();
             foreach (var sound in sounds) {
                 foreach (var file in sound.Files) {
                     string fileName = Path.GetFileName(new Uri(file.Url).LocalPath);
@@ -33,57 +23,88 @@ namespace WoWheadDownloader {
             return sounds;
         }
 
-        internal static HtmlDocument GetPage(string url) {
-            var web = new HtmlWeb();
-            return web.Load(url);
-        }
+		/**
+         * Downloads all sounds from the given page.
+         * Accepts either a search page like:
+         * https://www.wowhead.com/sounds/zone-music/name:boralus
+         * Or single sound page like:
+         * https://www.wowhead.com/sound=22846/mus-southbarrensgreen
+         */
+        public static Sound[] GetSoundsFromPage(string url) {
+            LinkType type = GetLinkType(url);
+            if (type == LinkType.Unknown)
+				throw new ArgumentException("Unsupported URL format.");
 
-		internal static bool GetSearchedSoundsJson(HtmlDocument? doc, out string output) {
-			// Find script tag
-			var scriptNode = doc.DocumentNode.SelectSingleNode("//script[contains(text(), 'new Listview')]");
+			var doc = GetPage(url);
 
-			if (scriptNode == null) {
-				output = "No relevant script tag found.";
-				return false;
-			}
-			// Extract JSON using Regex
-			string scriptText = scriptNode.InnerText;
-			var match = Regex.Match(scriptText, @"new Listview\((\{.*\})\);");
+            string jsonOutput = type switch {
+				LinkType.Search => GetSearchedSoundsJson(doc),
+				LinkType.Sound => GetSoundJson(doc),
+				_ => ""
+			};
 
-			if (!match.Success) {
-				output = "No JSON data found.";
-				return false;
-			}
-
-			output = match.Groups[1].Value;
-			output = output.Replace("\\/", "/"); // Fix escaped slashes
-			return true;
+			return type switch {
+				LinkType.Search => ParseSearchedSoundsJson(jsonOutput).Sounds,
+				LinkType.Sound => ParseSoundJson(jsonOutput),
+				_ => []
+			};
 		}
 
-        internal static bool GetSoundJson(HtmlDocument? doc, out string output) {
-            // Find script tag
-            var scriptNode = doc.DocumentNode.SelectSingleNode("//script[contains(text(), 'WH.Gatherer.addData')]");
+		public static async Task DownloadFileAsync(HttpClient client, string url, string filePath) {
+			try {
+				byte[] fileBytes = await client.GetByteArrayAsync(url);
+				await File.WriteAllBytesAsync(filePath, fileBytes);
+			}
+			catch (Exception ex) {
+				Console.WriteLine($"Error downloading {url}: {ex.Message}");
+			}
+		}
 
-            if (scriptNode == null) {
-                output = "No relevant script tag found.";
-                return false;
-            }
+		private static LinkType GetLinkType(string url) {
+			if (url.Contains("/sound="))
+				return LinkType.Sound;
+			if (url.Contains("/sounds/"))
+				return LinkType.Search;
+			return LinkType.Unknown;
+		}
+
+		private enum LinkType {
+            Sound,
+            Search,
+            Unknown
+        }
+
+		private static HtmlDocument GetPage(string url) {
+            var web = new HtmlWeb();
+            return web.Load(url);
+		}
+
+		private static string GetSoundJson(HtmlDocument? doc)
+			=> GetJson(doc, "//script[contains(text(), 'WH.Gatherer.addData')]", SoundScriptRegex());
+
+		private static string GetSearchedSoundsJson(HtmlDocument? doc)
+			=> GetJson(doc, "//script[contains(text(), 'new Listview')]", SearchedSoundsScriptRegex());
+
+		private static string GetJson(HtmlDocument? doc, string scriptXpath, Regex jsonRegex) {
+            // Find script tag
+            var scriptNode = doc.DocumentNode.SelectSingleNode(scriptXpath);
+
+            if (scriptNode == null)
+				throw new ArgumentException("No relevant script tag found.");
 
             // Extract JSON using Regex
             string scriptText = scriptNode.InnerText;
-            var match = Regex.Match(scriptText, @"WH\.Gatherer\.addData\(19,\s*\d+,\s*(\{.*\})\);");
+            var match = jsonRegex.Match(scriptText);
 
-            if (!match.Success) {
-                output = "No JSON data found.";
-                return false;
-            }
+            if (!match.Success)
+				throw new ArgumentException("No JSON data found.");
 
-            output = match.Groups[1].Value;
+            var output = match.Groups[1].Value;
             output = output.Replace("\\/", "/"); // Fix escaped slashes
-            return true;
-        }
+            return output;
+		}
 
-		internal static Search ParseSearchedSoundsJson(string jsonOutput) {
+		private static Search ParseSearchedSoundsJson(string jsonOutput) {
 			jsonOutput = Regex.Replace(jsonOutput,
 				@",?\s*""extraCols""\s*:\s*\[[^\]]*\]\s*,?",
 		        string.Empty, RegexOptions.Singleline
@@ -96,7 +117,7 @@ namespace WoWheadDownloader {
 			return search;
 		}
 
-        internal static Sound[] ParseSoundJson(string jsonOutput) {
+		internal static Sound[] ParseSoundJson(string jsonOutput) {
             var soundsDict = JsonSerializer.Deserialize<Dictionary<string, Sound>>(jsonOutput);
             if (soundsDict is null)
                 throw new InvalidDataException("Failed to deserialize JSON.");
@@ -107,14 +128,10 @@ namespace WoWheadDownloader {
             return soundsDict.Values.ToArray();
         }
 
-        internal static async Task DownloadFileAsync(HttpClient client, string url, string filePath) {
-            try {
-                byte[] fileBytes = await client.GetByteArrayAsync(url);
-                await File.WriteAllBytesAsync(filePath, fileBytes);
-            }
-            catch (Exception ex) {
-                Console.WriteLine($"Error downloading {url}: {ex.Message}");
-            }
-        }
-    }
+		[GeneratedRegex(@"WH\.Gatherer\.addData\(19,\s*\d+,\s*(\{.*\})\);")]
+		private static partial Regex SoundScriptRegex();
+
+		[GeneratedRegex(@"new Listview\((\{.*\})\);")]
+		private static partial Regex SearchedSoundsScriptRegex();
+	}
 }

@@ -9,43 +9,19 @@ namespace WoWheadDownloader {
     internal class Program {
         static async Task Main(string[] args) {
             string targetFolder = "DownloadedMP3s";
-            string soundPage = "https://www.wowhead.com/sound=22271/mus-southbarrens-gn";
+            string soundPage = "https://www.wowhead.com/sounds/zone-music/name:kultir";
             Directory.CreateDirectory(targetFolder);
 
-            // Step 1: Get the Page
-            HtmlDocument doc = null;
-            bool pageSuccess = await Spinner.StartAsync("Fetching sound page...", async spinner =>
-            {
-                doc = Downloader.GetPage(soundPage);
-                if (doc == null) {
-                    spinner.Fail("Failed to fetch sound page.");
-                    return false;
-                }
-                spinner.Succeed("Page fetched.");
-                return true;
-            });
-
-            if (!pageSuccess) return;
-
-            // Step 2: Extract JSON
-            string jsonOutput = "";
-            bool jsonSuccess = await Spinner.StartAsync("Extracting sound information...", async spinner => {
-                //if (!Downloader.GetSoundJson(doc, out jsonOutput)) {
-                if (!Downloader.GetSearchedSoundsJson(doc, out jsonOutput)) {
-                    spinner.Fail("Failed to extract sound information.");
-                    return false;
-                }
-                spinner.Succeed("Sound information extracted.");
-                return true;
-            });
-
-            if (!jsonSuccess) return;
-
-            // Step 3: Parse Sounds
+			// Step 1: Get the sounds from the page
             Sound[] sounds = [];
-            bool parseSuccess = await Spinner.StartAsync("Parsing sound data...", async spinner => {
-				//sounds = Downloader.ParseSoundJson(jsonOutput);
-				sounds = Downloader.ParseSearchedSoundsJson(jsonOutput).Sounds;
+            bool parseSuccess = await Spinner.StartAsync("Fetching sound data...", async spinner => {
+                try {
+					sounds = Downloader.GetSoundsFromPage(soundPage);
+				}
+                catch (Exception e) {
+					spinner.Fail(e.Message);
+					return false;
+				}
                 if (sounds.Length == 0) {
                     spinner.Fail("No sounds found.");
                     return false;
@@ -56,7 +32,7 @@ namespace WoWheadDownloader {
 
             if (!parseSuccess) return;
 
-            // Step 4: Download Files
+            // Step 2: Download Files
             using HttpClient client = new();
             foreach (var sound in sounds) {
                 int fileCount = sound.Files.Count;
