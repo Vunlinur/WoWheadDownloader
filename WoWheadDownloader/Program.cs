@@ -2,6 +2,7 @@
 using Kurukuru;
 using NAudio.Wave;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 
 namespace WoWheadDownloader {
@@ -91,13 +92,16 @@ namespace WoWheadDownloader {
         private static async Task<int> DownloadSoundFiles(Sound sound, HttpClient client, string targetFolder) {
             int errorCount = 0;
             foreach (var file in sound.Files) {
-                string fileName = Path.GetFileName(new Uri(file.Url).LocalPath);
-                string filePath = Path.Combine(targetFolder, fileName);
+				string fileName = file.FileName;
+				string setDir = Path.Combine(targetFolder, sound.Name);
+				Directory.CreateDirectory(setDir);
+                file.MetaData.LocalFile = Path.Combine(targetFolder, setDir, fileName);
 
                 await Spinner.StartAsync($"  Downloading: {fileName}...", async spinner => {
                     try {
-                        await Downloader.DownloadFileAsync(client, file.Url, filePath);
-                        spinner.Succeed($"  Saved: {filePath}");
+                        await Downloader.DownloadFileAsync(client, file.Url, file.MetaData.LocalFile);
+                        file.MetaData.Downloaded = true;
+                        spinner.Succeed($"  Saved: {file.MetaData.LocalFile}");
                     }
                     catch (Exception ex) {
                         errorCount++;
