@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [ "main" ]
+    tags: ['v*']
   pull_request:
     branches: [ "main" ]
 
@@ -34,13 +35,15 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
 
-    # Package
     - name: Package
       run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 
-    # Upload the artifact: https://github.com/marketplace/actions/upload-a-build-artifact
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: WoWheadDownloader
-        path: WoWheadDownloader/bin/Release/net8.0/win-x64/publish/WoWheadDownloader.exe
+        tag_name: ${{ github.ref_name }}
+        name: ${{ github.ref_name }}
+        files: |
+          WoWheadDownloader/bin/Release/net8.0/win-x64/publish/WoWheadDownloader.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
