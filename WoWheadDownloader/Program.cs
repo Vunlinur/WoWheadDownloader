@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using Kurukuru;
+using NAudio.Wave;
 using System.Linq;
 
 
@@ -68,6 +69,23 @@ namespace WoWheadDownloader {
                         spinner.Warn($"Partially completed: {sound.Name} ({fileCount - errorCount}/{fileCount} file/s)");
                 });
             }
+
+            //// Combine downloaded files into single MP3 per set
+            //foreach (SoundSet set in sSets) {
+			//	using var outputStream = File.Create(set.Name);
+            //    foreach (SoundFile file in set.Files) {
+            //        Mp3FileReader reader = new Mp3FileReader(file.MetaData.LocalFile);
+            //        if ((outputStream.Position == 0) && (reader.Id3v2Tag != null)) {
+            //            outputStream.Write(reader.Id3v2Tag.RawData,
+            //                     0,
+            //                     reader.Id3v2Tag.RawData.Length);
+            //        }
+            //        Mp3Frame frame;
+            //        while ((frame = reader.ReadNextFrame()) != null) {
+            //            outputStream.Write(frame.RawData, 0, frame.RawData.Length);
+            //        }
+            //    }
+            //}
         }
 
         private static async Task<int> DownloadSoundFiles(Sound sound, HttpClient client, string targetFolder) {
